@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using Bases;
 using Interface;
+using Managers;
 using UnityEngine;
 
 namespace Skill
@@ -10,21 +12,31 @@ namespace Skill
         private bool _isCloaking = false;
         public GameObject leftSword;
         public GameObject rightSword;
-        
+        private Coroutine _cloak;
+
         protected override void Skill0()
         {
+            audioManager.PlayAudio(AudioManager.SHORT_SWORD_ATTACK);
             animator.SetTrigger(ATTACK);
+            if (_isCloaking)
+            {
+                if (_cloak != null) StopCoroutine(_cloak);
+                _player.Cloaking(false);
+                _isCloaking = false;
+            }
         }
 
         protected override void Skill1()
         {
-            _player.Dash(20, 0.2f);
+            audioManager.PlayAudio(AudioManager.SHORT_SWORD_DASH);
+            _player.Dash(20, 0.2f, _isCloaking);
         }
 
         protected override void Skill2()
         {
             if (_isCloaking) return;
-            StartCoroutine(Cloaking(5f));
+            audioManager.PlayAudio(AudioManager.SHORT_SWORD_CLOAKING);
+            _cloak = StartCoroutine(Cloaking(5f));
         }
 
         private IEnumerator Cloaking(float duration)
@@ -32,8 +44,6 @@ namespace Skill
             _isCloaking = true;
             var t = 0f;
             _player.Cloaking(true);
-            leftSword.SetActive(false);
-            rightSword.SetActive(false);
             
             while (t < duration)
             {
@@ -41,8 +51,6 @@ namespace Skill
                 yield return null;
             }
             _player.Cloaking(false);
-            leftSword.SetActive(true);
-            rightSword.SetActive(true);
             _isCloaking = false;
         }
         
@@ -50,7 +58,7 @@ namespace Skill
         {
             if (other.CompareTag("Player") && other.gameObject != _player.gameObject)
             {
-                other.GetComponent<IDamageable>()?.Damaged(0.5f, transform.position);
+                other.GetComponent<IDamageable>()?.Damaged(1f, transform.position);
             }
         }
     }

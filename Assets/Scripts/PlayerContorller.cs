@@ -4,6 +4,7 @@ using Bases;
 using Interface;
 using Managers;
 using Photon.Pun;
+using Skill;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -24,6 +25,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable, IDamageable
     [SerializeField] private GameObject spinObject;
     [SerializeField] private TextMeshProUGUI playerNameTMP;
     [SerializeField] private Slider playerHpSlider;
+    [SerializeField] private AudioManager audioManager;
     public GameObject particle;
     private Weapon _weapon;
     
@@ -158,17 +160,17 @@ public class PlayerController : MonoBehaviourPun, IPunObservable, IDamageable
         _weapon.ExecuteSkill(idx);
     }
     
-    public void Dash(float dashSpeed, float dashDuration)
+    public void Dash(float dashSpeed, float dashDuration, bool isCloaking = false)
     {
         if (_bodyDirection == Vector3.zero) return;
-        StartCoroutine(IDash(dashSpeed, dashDuration));
+        StartCoroutine(IDash(dashSpeed, dashDuration, isCloaking));
     }
 
-    private IEnumerator IDash(float dashSpeed, float dashDuration)
+    private IEnumerator IDash(float dashSpeed, float dashDuration, bool isCloaking = false)
     {
         _isDash = true;
         _moveDirection = Vector3.zero;
-        particle.SetActive(true);
+        if (!isCloaking) particle.SetActive(true);
 
         var dashTime = 0f;
 
@@ -189,6 +191,8 @@ public class PlayerController : MonoBehaviourPun, IPunObservable, IDamageable
 
     private IEnumerator RotateAndShrink()
     {
+        audioManager.PlayAudio(AudioManager.DIE);
+        
         _collider2D.enabled = false;
         _isPause = true;
         float elapsedTime = 0f;
@@ -223,17 +227,18 @@ public class PlayerController : MonoBehaviourPun, IPunObservable, IDamageable
         transform.position = Vector3.zero;
         _hp = maxHp;
         _collider2D.enabled = true;
+        _moveDirection = Vector3.zero;
 
         _isPause = false;
     }
 
     #endregion
     
-    public void Damaged(float damage, Vector3 position, bool isKnockBack=true)
+    public void Damaged(float damage, Vector3 position, bool isKnockBack=true, float knockBackWeight=1f)
     {
         
         var knockBack = (transform.position - position).normalized;
-        if (isKnockBack) _rigidBody2D.AddForce(knockBack * 10f, ForceMode2D.Impulse);
+        if (isKnockBack) _rigidBody2D.AddForce(knockBack * 10f * knockBackWeight, ForceMode2D.Impulse);
 
         if (photonView.IsMine) return;
         photonView.RPC(nameof(DamageRPC), RpcTarget.All, damage);
@@ -242,6 +247,7 @@ public class PlayerController : MonoBehaviourPun, IPunObservable, IDamageable
     [PunRPC]
     private void DamageRPC(float damage)
     {
+        audioManager.PlayAudio(AudioManager.HIT);
         _hp -= damage;
         if (_hp <= 0) StartCoroutine(RotateAndShrink());
     }
@@ -256,12 +262,27 @@ public class PlayerController : MonoBehaviourPun, IPunObservable, IDamageable
 
     public void Cloaking(bool isCloaking)
     {
+        var shortSwordColor = new Color(0.5471698f, 0.5471698f, 0.5471698f);
+        var shortSwordCloakColor = photonView.IsMine ? new Color(0.5f, 0.5f, 0.5f, 0.1f) : new Color(1, 1, 1, 0f);
+        var bodyColor = photonView.IsMine ? new Color(1, 1, 1, 0.1f) : new Color(1, 1, 1, 0f);
         if (isCloaking)
         {
-            gameObject.GetComponent<SpriteRenderer>().color =
-                photonView.IsMine ? new Color(1, 1, 1, 0.1f) : new Color(1, 1, 1, 0f);
+            if (((ShortSword)_weapon).leftSword!=null)
+            {
+                ((ShortSword)_weapon).leftSword.GetComponent<SpriteRenderer>().color = shortSwordCloakColor;
+                ((ShortSword)_weapon).rightSword.GetComponent<SpriteRenderer>().color = shortSwordCloakColor;
+            }
+            gameObject.GetComponent<SpriteRenderer>().color = bodyColor;
         }
-        else gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1f);
+        else
+        {
+            if (((ShortSword)_weapon).leftSword!= null)
+            {
+                ((ShortSword)_weapon).leftSword.GetComponent<SpriteRenderer>().color = shortSwordColor;
+                ((ShortSword)_weapon).rightSword.GetComponent<SpriteRenderer>().color = shortSwordColor;
+            }
+            gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1f);
+        }
 
         if (!photonView.IsMine)
         {

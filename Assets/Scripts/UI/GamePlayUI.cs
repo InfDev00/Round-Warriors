@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Net.Mime;
 using Managers;
 using TMPro;
 using UnityEngine;
@@ -14,13 +15,14 @@ namespace UI
         
         [Header("Image")] 
         public Image clock;
-        public GameObject countGroup;
-        private Image[] _killCount = new Image[3];
-        private Image[] _lifeCount = new Image[3];
+
+        public GameObject countObj;
+        private Image[] killCount = new Image[3];
+        private Image[] lifeCount = new Image[3];
 
         public Image[] skillIcon;
-        private Image[] _skillCoolImage = new Image[3];
-        private TextMeshProUGUI[] _skillCoolTimes = new TextMeshProUGUI[3];
+        private readonly Image[] _skillCoolImage = new Image[3];
+        private readonly TextMeshProUGUI[] _skillCoolTimes = new TextMeshProUGUI[3];
         
         [Header("Text")]
         public TextMeshProUGUI timeText;
@@ -37,22 +39,24 @@ namespace UI
         {
             timeText.text = TimeSetting((int)gamePlayTime);
             _initTime = gamePlayTime;
-            
-            var tmp = countGroup.GetComponentsInChildren<Image>();
-            for (int i = 0; i < 3; ++i)
+
+            int i = 0;
+            foreach (var obj in countObj.GetComponentsInChildren<Image>())
             {
-                _killCount[i] = tmp[i];
-                _lifeCount[i] = tmp[i + 3];
-
-                _killCount[i].color = Color.black;
+                if (i < 3) killCount[i] = obj;
+                else lifeCount[i - 3] = obj;
+                i++;
             }
-
-            for (int i = 0; i < 3; ++i)
+            
+            for (i = 0; i < 3; ++i)
             {
                 _skillCoolImage[i] = skillIcon[i].transform.GetChild(0).GetComponent<Image>();
                 _skillCoolTimes[i] = skillIcon[i].GetComponentInChildren<TextMeshProUGUI>();
                 
                 _skillCoolImage[i].gameObject.SetActive(false);
+
+                killCount[i].color = Color.black;
+                lifeCount[i].color = Color.white;
             }
 
             _endingText = endingGroup.GetComponentInChildren<TextMeshProUGUI>();
@@ -81,15 +85,15 @@ namespace UI
         public void PlayerLifeDecrease(int idx)
         {
             if (idx is < 0 or >= 3) return;
-            _lifeCount[idx].color = Color.black;
+            lifeCount[idx].color = Color.black;
         }
 
         public void PlayerKillIncrease(int idx)
         {
             if (idx is < 0 or >= 3) return;
             
-            if (idx == 2) foreach(var cnt in _killCount) cnt.color = Color.red;
-            else _killCount[idx].color = Color.white;
+            if (idx == 2) foreach(var cnt in killCount) cnt.color = Color.red;
+            else killCount[idx].color = Color.white;
             
         }
         

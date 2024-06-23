@@ -1,4 +1,5 @@
 using System;
+using Managers;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -8,6 +9,7 @@ namespace Bases
     public abstract class Weapon : MonoBehaviour
     {
         [SerializeField] protected Animator animator;
+        [SerializeField] protected AudioManager audioManager;
         protected PlayerController _player;
         protected const string ATTACK = "Attack";
         protected const string HEALING = "Healing";

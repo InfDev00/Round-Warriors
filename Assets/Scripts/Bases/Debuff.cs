@@ -6,7 +6,7 @@ namespace Bases
     public abstract class Debuff : MonoBehaviour
     {
         protected PlayerController _player;
-        private float _debuffDuration = 0.1f;
+        public float _debuffDuration = 0.1f;
 
         private void Awake()
         {

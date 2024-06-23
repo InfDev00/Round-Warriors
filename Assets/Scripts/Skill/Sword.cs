@@ -3,6 +3,7 @@ using System.Collections;
 using Bases;
 using Debuff;
 using Interface;
+using Managers;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -15,17 +16,20 @@ namespace Skill
 
         protected override void Skill0()
         {
+            audioManager.PlayAudio(AudioManager.SWORD_ATTACK);
             animator.SetTrigger(ATTACK);
         }
-
+        
         protected override void Skill1()
         {
+            audioManager.PlayAudio(AudioManager.SWORD_DASH);
             _player.Dash(10, 0.6f);
         }
 
         protected override void Skill2()
         {
             if (_isHealing) return;
+            audioManager.PlayAudio(AudioManager.SWORD_HEAL);
             StartCoroutine(IHeal());
         }
         

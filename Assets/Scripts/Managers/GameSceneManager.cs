@@ -12,7 +12,6 @@ namespace Managers
     {
         COUNT_DOWN_STATE,
         GAME_PLAY_STATE,
-        GAME_FINAL_STATE,
         GAME_END_STATE
     }
     public class GameSceneManager : MonoBehaviour
@@ -99,6 +98,11 @@ namespace Managers
 
         #endregion
 
+        private void FixedUpdate()
+        {
+            if(ui.timeText.text=="00:00") GameEndByTimeOver();
+        }
+
         #region GameEndState
 
         private void GameEndByKillOther()
@@ -118,6 +122,16 @@ namespace Managers
             CurrentGameState = GameState.GAME_END_STATE;
             
             ui.GameEnd("Enemy Run");
+            Time.timeScale = 0f;
+        }
+
+        private void GameEndByTimeOver()
+        {
+            if (CurrentGameState == GameState.GAME_END_STATE) return;
+            CurrentGameState = GameState.GAME_END_STATE;
+            
+            ui.GameEnd("Time Over");
+            Time.timeScale = 0f;
         }
 
         #endregion
